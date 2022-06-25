@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/MrWestbury/terraxen-scheduler/pkg/agentpool"
 	"github.com/MrWestbury/terraxen-scheduler/pkg/gRPCServer"
 	pb "github.com/MrWestbury/terraxen-scheduler/service"
 	"google.golang.org/grpc"
@@ -26,7 +27,12 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	handler := gRPCServer.NewRemoteServer()
+
+	defaultAgentPool, err := agentpool.NewAgentpool("default")
+	if err != nil {
+		log.Fatalf("failed to create agent pool")
+	}
+	handler := gRPCServer.NewRemoteServer(defaultAgentPool)
 
 	pb.RegisterTerraxenSchedulerServer(s, handler)
 	log.Printf("server listening at %v", listener.Addr())

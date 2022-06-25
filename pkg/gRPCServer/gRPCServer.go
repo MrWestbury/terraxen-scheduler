@@ -4,23 +4,20 @@ import (
 	"context"
 	"log"
 
+	"github.com/MrWestbury/terraxen-scheduler/pkg/agentpool"
 	pb "github.com/MrWestbury/terraxen-scheduler/service"
 	"github.com/google/uuid"
 )
 
 type RemoteServer struct {
 	pb.UnimplementedTerraxenSchedulerServer
-	agents *Agentpool
+	agents *agentpool.Agentpool
 }
 
-func NewRemoteServer() *RemoteServer {
-	defaultAgentPool, err := NewAgentpool("default")
-	if err != nil {
-		log.Printf("failed to create agent pool")
-		return nil
-	}
+func NewRemoteServer(agentpool *agentpool.Agentpool) *RemoteServer {
+
 	server := &RemoteServer{
-		agents: defaultAgentPool,
+		agents: agentpool,
 	}
 	return server
 }
@@ -33,7 +30,7 @@ func (gServ *RemoteServer) Register(ctx context.Context, req *pb.RegisterRequest
 		return nil, err
 	}
 
-	agent := &Agent{
+	agent := &agentpool.Agent{
 		Id:   agentid.String(),
 		Name: req.Agentname,
 	}
@@ -49,11 +46,23 @@ func (gServ *RemoteServer) Register(ctx context.Context, req *pb.RegisterRequest
 }
 
 func (gServ *RemoteServer) Unregister(ctx context.Context, req *pb.UnregisterRequest) (*pb.UnregisterReply, error) {
-	reply := &pb.UnregisterReply{}
+	gServ.agents.UnregisterAgent(req.GetAgentId())
+	reply := &pb.UnregisterReply{
+		Message: "Agent unregistered",
+	}
 	return reply, nil
 }
 
 func (gServer *RemoteServer) Checkin(ctx context.Context, req *pb.CheckinRequest) (*pb.CheckinReply, error) {
 	reply := &pb.CheckinReply{}
 	return reply, nil
+}
+
+func (gServer *RemoteServer) GetJob(ctx context.Context, req *pb.GetJobRequest) (*pb.GetJobReply, error) {
+	reply := &pb.GetJobReply{}
+	return reply, nil
+}
+
+func (gServer *RemoteServer) UpdateJob(ctx context.Context, req *pb.UpdateJobStateRequest) (*pb.UpdateJobStateReply, error) {
+
 }

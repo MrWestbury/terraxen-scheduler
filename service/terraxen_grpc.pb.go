@@ -25,6 +25,8 @@ type TerraxenSchedulerClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error)
 	Unregister(ctx context.Context, in *UnregisterRequest, opts ...grpc.CallOption) (*UnregisterReply, error)
 	Checkin(ctx context.Context, in *CheckinRequest, opts ...grpc.CallOption) (*CheckinReply, error)
+	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobReply, error)
+	UpdateJob(ctx context.Context, in *UpdateJobStateRequest, opts ...grpc.CallOption) (*UpdateJobStateReply, error)
 }
 
 type terraxenSchedulerClient struct {
@@ -62,6 +64,24 @@ func (c *terraxenSchedulerClient) Checkin(ctx context.Context, in *CheckinReques
 	return out, nil
 }
 
+func (c *terraxenSchedulerClient) GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobReply, error) {
+	out := new(GetJobReply)
+	err := c.cc.Invoke(ctx, "/TerraxenScheduler/GetJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *terraxenSchedulerClient) UpdateJob(ctx context.Context, in *UpdateJobStateRequest, opts ...grpc.CallOption) (*UpdateJobStateReply, error) {
+	out := new(UpdateJobStateReply)
+	err := c.cc.Invoke(ctx, "/TerraxenScheduler/UpdateJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TerraxenSchedulerServer is the server API for TerraxenScheduler service.
 // All implementations must embed UnimplementedTerraxenSchedulerServer
 // for forward compatibility
@@ -69,6 +89,8 @@ type TerraxenSchedulerServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	Unregister(context.Context, *UnregisterRequest) (*UnregisterReply, error)
 	Checkin(context.Context, *CheckinRequest) (*CheckinReply, error)
+	GetJob(context.Context, *GetJobRequest) (*GetJobReply, error)
+	UpdateJob(context.Context, *UpdateJobStateRequest) (*UpdateJobStateReply, error)
 	mustEmbedUnimplementedTerraxenSchedulerServer()
 }
 
@@ -84,6 +106,12 @@ func (UnimplementedTerraxenSchedulerServer) Unregister(context.Context, *Unregis
 }
 func (UnimplementedTerraxenSchedulerServer) Checkin(context.Context, *CheckinRequest) (*CheckinReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Checkin not implemented")
+}
+func (UnimplementedTerraxenSchedulerServer) GetJob(context.Context, *GetJobRequest) (*GetJobReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetJob not implemented")
+}
+func (UnimplementedTerraxenSchedulerServer) UpdateJob(context.Context, *UpdateJobStateRequest) (*UpdateJobStateReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateJob not implemented")
 }
 func (UnimplementedTerraxenSchedulerServer) mustEmbedUnimplementedTerraxenSchedulerServer() {}
 
@@ -152,6 +180,42 @@ func _TerraxenScheduler_Checkin_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TerraxenScheduler_GetJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TerraxenSchedulerServer).GetJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/TerraxenScheduler/GetJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TerraxenSchedulerServer).GetJob(ctx, req.(*GetJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TerraxenScheduler_UpdateJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateJobStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TerraxenSchedulerServer).UpdateJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/TerraxenScheduler/UpdateJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TerraxenSchedulerServer).UpdateJob(ctx, req.(*UpdateJobStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TerraxenScheduler_ServiceDesc is the grpc.ServiceDesc for TerraxenScheduler service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +234,14 @@ var TerraxenScheduler_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Checkin",
 			Handler:    _TerraxenScheduler_Checkin_Handler,
+		},
+		{
+			MethodName: "GetJob",
+			Handler:    _TerraxenScheduler_GetJob_Handler,
+		},
+		{
+			MethodName: "UpdateJob",
+			Handler:    _TerraxenScheduler_UpdateJob_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

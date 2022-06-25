@@ -6,6 +6,8 @@ service TerraxenScheduler {
   rpc Register (RegisterRequest) returns (RegisterReply) {}
   rpc Unregister (UnregisterRequest) returns (UnregisterReply) {}
   rpc Checkin (CheckinRequest) returns (CheckinReply) {}
+  rpc GetJob (GetJobRequest) returns (GetJobReply) {}
+  rpc UpdateJob (UpdateJobStateRequest) returns (UpdateJobStateReply) {}
 }
 
 message RegisterRequest {
@@ -27,8 +29,31 @@ message UnregisterReply {
 }
 
 message CheckinRequest {
+  string agentId = 1;
 }
 
 message CheckinReply {
   string jobId = 1;
+}
+
+message GetJobRequest {
+  string agentId = 1;
+  string jobId = 2;
+}
+
+message GetJobReply {
+  string jobId = 1;
+  string gitUrl = 2;
+  string authCreds = 3;
+}
+
+message UpdateJobStateRequest {
+  string agendId = 1;
+  string jobId = 2;
+  string message = 3;
+  string status = 4;
+}
+
+message UpdateJobStateReply {
+  string message = 1;
 }
