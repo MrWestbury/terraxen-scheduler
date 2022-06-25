@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option go_package = "github.com/MrWestbury/terraxen-scheduler/service";
+
+service TerraxenScheduler {
+  rpc Register (RegisterRequest) returns (RegisterReply) {}
+  rpc Unregister (UnregisterRequest) returns (UnregisterReply) {}
+  rpc Checkin (CheckinRequest) returns (CheckinReply) {}
+}
+
+message RegisterRequest {
+  string poolname = 1;
+  string agentname = 2;
+}
+
+message RegisterReply {
+  string message = 1;
+  string agentId = 2;
+}
+
+message UnregisterRequest {
+  string agentId = 1;
+}
+
+message UnregisterReply {
+  string message = 1;
+}
+
+message CheckinRequest {
+}
+
+message CheckinReply {
+  string jobId = 1;
+}
