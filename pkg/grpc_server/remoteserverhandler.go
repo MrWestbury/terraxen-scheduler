@@ -3,6 +3,7 @@ package grpc_server
 import (
 	"context"
 	"errors"
+	"io"
 	"log"
 
 	"github.com/MrWestbury/terraxen-scheduler/pkg/agentpool"
@@ -100,4 +101,19 @@ func (gServer *RemoteServerHandler) UpdateJob(ctx context.Context, req *pb.Updat
 		Message: "Ok",
 	}
 	return reply, nil
+}
+
+func (gServer *RemoteServer) SendJobLog(stream pb.TerraxenScheduler_SendJobLogServer) error {
+	for {
+		entry, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&pb.JobLogEntryReply{
+				Message: "Ok, got all the logs",
+			})
+		}
+		if err != nil {
+			return err
+		}
+
+	}
 }
