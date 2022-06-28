@@ -27,6 +27,7 @@ type TerraxenSchedulerClient interface {
 	Checkin(ctx context.Context, in *CheckinRequest, opts ...grpc.CallOption) (*CheckinReply, error)
 	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobReply, error)
 	UpdateJob(ctx context.Context, in *UpdateJobStateRequest, opts ...grpc.CallOption) (*UpdateJobStateReply, error)
+	SendJobLog(ctx context.Context, opts ...grpc.CallOption) (TerraxenScheduler_SendJobLogClient, error)
 }
 
 type terraxenSchedulerClient struct {
@@ -82,6 +83,40 @@ func (c *terraxenSchedulerClient) UpdateJob(ctx context.Context, in *UpdateJobSt
 	return out, nil
 }
 
+func (c *terraxenSchedulerClient) SendJobLog(ctx context.Context, opts ...grpc.CallOption) (TerraxenScheduler_SendJobLogClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TerraxenScheduler_ServiceDesc.Streams[0], "/TerraxenScheduler/SendJobLog", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &terraxenSchedulerSendJobLogClient{stream}
+	return x, nil
+}
+
+type TerraxenScheduler_SendJobLogClient interface {
+	Send(*JobLogEntry) error
+	CloseAndRecv() (*JobLogEntryReply, error)
+	grpc.ClientStream
+}
+
+type terraxenSchedulerSendJobLogClient struct {
+	grpc.ClientStream
+}
+
+func (x *terraxenSchedulerSendJobLogClient) Send(m *JobLogEntry) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *terraxenSchedulerSendJobLogClient) CloseAndRecv() (*JobLogEntryReply, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(JobLogEntryReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TerraxenSchedulerServer is the server API for TerraxenScheduler service.
 // All implementations must embed UnimplementedTerraxenSchedulerServer
 // for forward compatibility
@@ -91,6 +126,7 @@ type TerraxenSchedulerServer interface {
 	Checkin(context.Context, *CheckinRequest) (*CheckinReply, error)
 	GetJob(context.Context, *GetJobRequest) (*GetJobReply, error)
 	UpdateJob(context.Context, *UpdateJobStateRequest) (*UpdateJobStateReply, error)
+	SendJobLog(TerraxenScheduler_SendJobLogServer) error
 	mustEmbedUnimplementedTerraxenSchedulerServer()
 }
 
@@ -112,6 +148,9 @@ func (UnimplementedTerraxenSchedulerServer) GetJob(context.Context, *GetJobReque
 }
 func (UnimplementedTerraxenSchedulerServer) UpdateJob(context.Context, *UpdateJobStateRequest) (*UpdateJobStateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateJob not implemented")
+}
+func (UnimplementedTerraxenSchedulerServer) SendJobLog(TerraxenScheduler_SendJobLogServer) error {
+	return status.Errorf(codes.Unimplemented, "method SendJobLog not implemented")
 }
 func (UnimplementedTerraxenSchedulerServer) mustEmbedUnimplementedTerraxenSchedulerServer() {}
 
@@ -216,6 +255,32 @@ func _TerraxenScheduler_UpdateJob_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TerraxenScheduler_SendJobLog_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(TerraxenSchedulerServer).SendJobLog(&terraxenSchedulerSendJobLogServer{stream})
+}
+
+type TerraxenScheduler_SendJobLogServer interface {
+	SendAndClose(*JobLogEntryReply) error
+	Recv() (*JobLogEntry, error)
+	grpc.ServerStream
+}
+
+type terraxenSchedulerSendJobLogServer struct {
+	grpc.ServerStream
+}
+
+func (x *terraxenSchedulerSendJobLogServer) SendAndClose(m *JobLogEntryReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *terraxenSchedulerSendJobLogServer) Recv() (*JobLogEntry, error) {
+	m := new(JobLogEntry)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TerraxenScheduler_ServiceDesc is the grpc.ServiceDesc for TerraxenScheduler service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -244,6 +309,12 @@ var TerraxenScheduler_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TerraxenScheduler_UpdateJob_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SendJobLog",
+			Handler:       _TerraxenScheduler_SendJobLog_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "terraxen.proto",
 }
