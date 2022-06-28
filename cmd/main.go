@@ -1,16 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/MrWestbury/terraxen-scheduler/pkg/agentpool"
-	"github.com/MrWestbury/terraxen-scheduler/pkg/gRPCServer"
-	pb "github.com/MrWestbury/terraxen-scheduler/service"
-	"google.golang.org/grpc"
+	"github.com/MrWestbury/terraxen-scheduler/pkg/grpc_server"
+	"github.com/MrWestbury/terraxen-scheduler/pkg/jobpool"
+	restapi "github.com/MrWestbury/terraxen-scheduler/pkg/rest_api"
 )
 
 func main() {
@@ -22,21 +21,31 @@ func main() {
 			port = portInt
 		}
 	}
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+	restPortStr := os.Getenv("TERRAXEN_SCHEDULER_REST_PORT")
+	restPort := 7101
+	if restPortStr == "" {
+		restPortInt, err := strconv.Atoi(restPortStr)
+		if err == nil {
+			restPort = restPortInt
+		}
 	}
-	s := grpc.NewServer()
+
+	jobs := jobpool.NewJobPool()
 
 	defaultAgentPool, err := agentpool.NewAgentpool("default")
 	if err != nil {
 		log.Fatalf("failed to create agent pool")
 	}
-	handler := gRPCServer.NewRemoteServer(defaultAgentPool)
 
-	pb.RegisterTerraxenSchedulerServer(s, handler)
-	log.Printf("server listening at %v", listener.Addr())
-	if err := s.Serve(listener); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	rpc_server := grpc_server.NewRemoteServer("", port, defaultAgentPool, jobs)
+	go rpc_server.Start(&wg)
+
+	// Rest server
+	rest_server := restapi.NewRestApiServer("", restPort, defaultAgentPool, jobs)
+	go rest_server.Start(&wg)
+
+	wg.Wait()
 }
