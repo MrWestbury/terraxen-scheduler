@@ -63,7 +63,9 @@ message UpdateJobStateReply {
 }
 
 message JobLogEntry {
-  string logEntry = 1;
+  string agentId = 1;
+  string jobId = 2;
+  string logEntry = 3;
 }
 
 message JobLogEntryReply {
